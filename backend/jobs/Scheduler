@@ -1,0 +1,96 @@
+const cron = require('node-cron');
+const HotelScraper = require('../scrapers/hotel-scraper');
+const ContentGenerator = require('../generators/content-generator');
+const SocialPoster = require('../social/social-poster'); 
+const BlogPost = require('../models/BlogPost');
+
+class Scheduler {
+  
+  constructor() {
+    this.scraper = new HotelScraper();
+    this.contentGenerator = new ContentGenerator();
+    this.socialPoster = new SocialPoster();
+    
+    this.locations = ['Bali', 'Paris', 'Tokyo', 'New York', 'London'];
+    this.isRunning = false;
+  }
+
+  start() {
+    console.log('Starting hotel scraper scheduler...');
+    
+    // Run immediately on start
+    this.runJob();
+    
+    // Schedule every 2 hours
+    cron.schedule('0 */2 * * *', () => {
+      console.log('Running scheduled job...');
+      this.runJob();
+    });
+    
+    console.log('Scheduler started - runs every 2 hours');
+  }
+
+  async runJob() {
+  if (this.isRunning) return;
+  this.isRunning = true;
+
+  try {
+    console.log('\n=== Starting Scraping Job ===');
+    const location = this.locations[Math.floor(Math.random() * this.locations.length)];
+    console.log(`Location: ${location}`);
+    
+    // Step 1: Scrape hotels
+    console.log('Scraping hotels...');
+    const hotels = await this.scraper.scrape(location);
+    console.log(`Found ${hotels.length} hotels`);
+    
+    // Step 2: Generate content
+    console.log('Generating content...');
+    const blogPost = await this.contentGenerator.generateBlogPost(hotels);
+    console.log('BlogPost generated:', blogPost); // DEBUG LINE
+    
+    // Step 3: Generate social media posts
+    const socialPosts = this.contentGenerator.generateSocialPosts(blogPost, hotels);
+    console.log('Social posts generated');
+    
+    console.log('Content title:', blogPost.title);
+    
+    // Step 4: Try to save to database
+    try {
+      const BlogPost = require('../models/BlogPost');
+      const post = new BlogPost({
+        title: blogPost.title,
+        content: blogPost.content,
+        excerpt: blogPost.excerpt,
+        location: location,
+        hotelData: hotels,
+        socialPosts: socialPosts
+      });
+      await post.save();
+      console.log('✅ Post saved to database');
+    } catch (dbError) {
+      console.log('📝 Database save skipped:', dbError.message);
+    }
+    
+    // Step 5: Post to social media
+    console.log('Posting to social media...');
+    await this.socialPoster.postToTwitter(socialPosts.twitter);
+    await this.socialPoster.postToFacebook(socialPosts.facebook);
+    
+    console.log('=== Job Completed Successfully ===\n');
+    
+  } catch (error) {
+    console.log('Job failed:', error.message);
+  } finally {
+    this.isRunning = false;
+  }
+}
+
+  // Manual trigger for testing
+  async runManual(location) {
+    console.log(`Manual job triggered for: ${location}`);
+    await this.runJob();
+  }
+}
+
+module.exports = Scheduler;

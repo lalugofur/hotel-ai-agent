@@ -1,0 +1,70 @@
+const axios = require('axios');
+
+class ContentGenerator {
+  async generateBlogPost(hotels) {
+    console.log('Generating blog post for', hotels.length, 'hotels');
+    
+    // Safety check
+    if (!hotels || hotels.length === 0) {
+      return this.createBasicPost();
+    }
+    
+    const location = hotels[0].location || 'Unknown Location';
+    return this.createTemplatePost(hotels, location);
+  }
+
+  createBasicPost() {
+    return {
+      title: 'Amazing Hotel Deals',
+      content: '<h1>Hotel Deals</h1><p>Check back soon for great hotel deals!</p>',
+      excerpt: 'Discover amazing hotel deals',
+      tags: ['hotels', 'travel']
+    };
+  }
+
+  createTemplatePost(hotels, location) {
+    const topHotels = hotels.slice(0, 3);
+    
+    const title = `Best Hotels in ${location}`;
+    
+    let content = `<h1>${title}</h1>\n`;
+    content += `<p>Great hotel options in ${location}:</p>\n\n`;
+    
+    topHotels.forEach((hotel, index) => {
+      content += `<div class="hotel">\n`;
+      content += `<h3>${hotel.name}</h3>\n`;
+      content += `<p>Price: $${hotel.price}/night, Rating: ${hotel.rating}/5</p>\n`;
+      content += `</div>\n\n`;
+    });
+    
+    return {
+      title: title,
+      content: content,
+      excerpt: `Hotel deals in ${location}`,
+      tags: ['hotels', 'travel', location.toLowerCase()]
+    };
+  }
+
+  generateSocialPosts(blogPost, hotels) {
+    // Safety checks
+    if (!blogPost || !hotels || hotels.length === 0) {
+      return {
+        twitter: '🏨 Great hotel deals available! #Travel',
+        facebook: 'Check out these amazing hotel deals!',
+        instagram: '✨ Amazing hotel deals! ✨'
+      };
+    }
+    
+    const location = hotels[0].location || 'amazing destinations';
+    const hotelName = hotels[0].name || 'luxury hotels';
+    const price = hotels[0].price || 'great prices';
+    
+    return {
+      twitter: `🏨 Hotel deals in ${location}! ${hotelName} from $${price}/night #Travel`,
+      facebook: `Discover hotel deals in ${location}! Perfect for your next vacation.`,
+      instagram: `✨ Hotel deals in ${location}! ✨`
+    };
+  }
+}
+
+module.exports = ContentGenerator;
