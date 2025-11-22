@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// hotel data
 const hotelSchema = new mongoose.Schema({
   name: String,
   price: Number,
@@ -11,6 +12,7 @@ const hotelSchema = new mongoose.Schema({
   scrapedAt: Date
 });
 
+// for blog post
 const blogPostSchema = new mongoose.Schema({
   title: String,
   content: String,
@@ -22,7 +24,7 @@ const blogPostSchema = new mongoose.Schema({
     facebook: String,
     instagram: String
   },
-  publishedAt: { type: Date, default: Date.now }
+  publishedAt: { type: Date, default: Date.now } // auto timestamp
 });
 
 module.exports = mongoose.model('BlogPost', blogPostSchema);
